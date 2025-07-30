@@ -7,7 +7,7 @@ stable-sort-alternative
 ### With gcc
 
 ```sh
-g++ main.cpp -o out && ./out
+g++ main.cpp -o out && out
 ```
 
 ### With CMake
@@ -16,7 +16,7 @@ g++ main.cpp -o out && ./out
 mkdir build && cd build
 cmake ..
 cmake --build .
-./main
+main
 ```
 
 ### Cross-Compiling

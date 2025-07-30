@@ -20,7 +20,8 @@
  * @note The `buffer` must have a size equal to the input array (`size`),
  *       and must be preallocated by the caller.
  *
- * @example
+ * #### Example usage:
+ * ```
  * struct Record {
  *   int key;
  *   int original_index;
