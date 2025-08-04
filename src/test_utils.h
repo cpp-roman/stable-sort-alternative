@@ -1,6 +1,7 @@
 #include <chrono>
 #include <iostream>
 #include <random>
+#include <vector>
 
 // ---- Struct to test stability ----
 struct Record {
@@ -62,28 +63,33 @@ std::vector<Record> generate_data(size_t n, const std::string &pattern) {
 }
 
 // ---- Benchmark one sorting function ----
-template <typename Func> long long benchmark(Func sort_fn, std::vector<Record> &data) {
+template <typename Func>
+long long benchmark(Func sort_fn, std::vector<Record> &data, Record *buffer) {
   auto start = std::chrono::steady_clock::now();
-  sort_fn(data);
+  sort_fn(data, buffer);
   auto end = std::chrono::steady_clock::now();
   return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 }
 
-// ---- Test runner comparing two sort functions ----
-template <typename SortFunc1, typename SortFunc2>
-bool run_test_case(const std::string &label, size_t size, SortFunc1 sort_fn1,
-                   SortFunc2 sort_fn2, const std::string &name1,
-                   const std::string &name2) {
+// ---- Test runner comparing against std::stable_sort ----
+template <typename SortFunc>
+bool run_test_case(const std::string &label, size_t size, SortFunc sort_fn,
+                   const std::string &name) {
   std::cout << "Test case: " << label << " [" << size << " elements]\n";
 
   auto original = generate_data(size, label);
-  auto data1 = original;
-  auto data2 = original;
+  auto data1 = original; // For std::stable_sort
+  auto data2 = original; // For the provided sort function
 
   std::vector<Record> buffer(size);
 
-  auto time1 = benchmark([&](auto &data) { sort_fn1(data, buffer.data()); }, data1);
-  auto time2 = benchmark([&](auto &data) { sort_fn2(data, buffer.data()); }, data2);
+  // Benchmark std::stable_sort
+  auto time1 = benchmark([](std::vector<Record> &data, Record *buffer) {
+    std::stable_sort(data.begin(), data.end(), KeyCompare{});
+  }, data1, buffer.data());
+
+  // Benchmark the provided sort function
+  auto time2 = benchmark(sort_fn, data2, buffer.data());
 
   bool ok = (data1 == data2);
   if (ok) {
@@ -99,14 +105,15 @@ bool run_test_case(const std::string &label, size_t size, SortFunc1 sort_fn1,
     }
   }
 
-  std::cout << "   " << name1 << ": " << time1 << " µs\n";
-  std::cout << "   " << name2 << ": " << time2 << " µs\n\n";
+  std::cout << "   std::stable_sort: " << time1 << " µs\n";
+  std::cout << "   " << name << ": " << time2 << " µs\n\n";
 
   return ok;
 }
 
 // ---- Stability test ----
-bool run_stability_test() {
+template <typename SortFn>
+bool run_stability_test(SortFn sort_fn) {
   std::vector<Record> data = {
       {5, 0},  {3, 1},  {3, 2},  {3, 3},  {1, 4},  {1, 5},  {2, 6},  {2, 7},  {4, 8},
       {4, 9},  {5, 10}, {3, 11}, {1, 12}, {1, 13}, {2, 14}, {2, 15}, {4, 16}, {4, 17},
@@ -119,7 +126,7 @@ bool run_stability_test() {
   std::vector<Record> buffer(data.size());
 
   std::stable_sort(expected.begin(), expected.end(), KeyCompare{});
-  my_stable_sort(data.data(), data.size(), buffer.data(), KeyCompare{});
+  sort_fn(data, buffer.data());
 
   if (data == expected) {
     std::cout << "\n✅✅ Stability test passed\n\n";

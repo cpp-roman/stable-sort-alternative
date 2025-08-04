@@ -1,28 +1,22 @@
 #include <algorithm>
 #include <string>
 
-#include "src/my_stable_sort.h"
+#include "src/recursive_stable_sort.h"
 #include "src/test_utils.h"
 
-#ifdef _WIN32 // windows-only - to output non-ascii chars
+#ifdef _WIN32 // Only for Windows, to output non-ascii characters in the terminal
 #include <windows.h>
 #endif
 
-// ---- Helpers to wrap std::stable_sort and my_stable_sort ----
-const std::string sort1_name = "std::stable_sort";
-auto sort1_fn = [](std::vector<Record> &data, Record *) {
-  std::stable_sort(data.begin(), data.end(), KeyCompare{});
-};
-
-const std::string sort2_name = "my_stable_sort";
-auto sort2_fn = [](std::vector<Record> &data, Record *buffer) {
-  my_stable_sort(data.data(), data.size(), buffer, KeyCompare{});
+const std::string sort_fn_name = "recursive_stable_sort";
+auto sort_fn = [](std::vector<Record> &data, Record *buffer) {
+  recursive_stable_sort(data.data(), data.size(), buffer, KeyCompare{});
 };
 
 // ---- Main ----
 int main() {
 
-#ifdef _WIN32 // windows-only - to output non-ascii chars
+#ifdef _WIN32 // Only for Windows, to output non-ascii characters in the terminal
   SetConsoleOutputCP(CP_UTF8);
 #endif
 
@@ -34,7 +28,7 @@ int main() {
 
   // --- Run stability test ---
   total_tests++;
-  if (!run_stability_test()) {
+  if (!run_stability_test(sort_fn)) {
     total_failures++;
   }
 
@@ -42,7 +36,7 @@ int main() {
   for (const auto &pattern : patterns) {
     for (size_t size : {10, 100, 1'000, 10'000, 100'000, 1'000'000}) {
       total_tests++;
-      bool ok = run_test_case(pattern, size, sort1_fn, sort2_fn, sort1_name, sort2_name);
+      bool ok = run_test_case(pattern, size, sort_fn, sort_fn_name);
       if (!ok) {
         total_failures++;
       }

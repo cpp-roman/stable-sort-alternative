@@ -1,6 +1,4 @@
-# stable-sort-alternative
-
-stable-sort-alternative
+# Stable sort without dynamic memory allocation
 
 ## Build and Run
 
